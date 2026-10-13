@@ -1,50 +1,39 @@
-print("===== WEEK 7: CONSTRAINT SPECIFICATION & ITERATIVE REFINEMENT =====")
- 
-initial_prompt = """
-Explain Cloud Computing.
-"""
- 
-refined_prompt_1 = """
-Explain Cloud Computing.
- 
-Constraints:
-1. Use simple English.
-2. Keep the answer under 150 words.
-3. Give 3 real-world examples.
-"""
- 
-refined_prompt_2 = """
-Explain Cloud Computing to a beginner engineering student.
- 
-Constraints:
-1. Start with a simple definition.
-2. Explain how Cloud Computing works.
-3. Give exactly 3 real-world examples.
-4. Mention 3 advantages.
-5. Use simple English.
-6. Keep the answer between 100 and 150 words.
-"""
- 
-final_prompt = """
-You are a Cloud Computing teacher.
- 
-Explain Cloud Computing to a first-year engineering student.
- 
-Follow these constraints:
-- Give a definition in 2 sentences.
-- Explain how it works in simple language.
-- Give exactly 3 real-world examples.
-- List exactly 3 advantages.
-- Do not use advanced technical terms.
-- Do not include unrelated information.
-- Keep the complete answer under 150 words.
-"""
- 
-print("\n--- INITIAL PROMPT ---")
-print(initial_prompt)
-print("\n--- REFINEMENT 1 ---")
-print(refined_prompt_1)
-print("\n--- REFINEMENT 2 ---")
-print(refined_prompt_2)
-print("\n--- FINAL REFINED PROMPT ---")
-print(final_prompt)
+!pip install -q openai pandas
+
+from google.colab import userdata
+from openai import OpenAI
+
+MAX_CALLS = 40
+call_count = 0
+
+client = OpenAI(
+    base_url="https://api.groq.com/openai/v1",
+    api_key=userdata.get("GROQ_API_KEY"),
+)
+MODEL = "llama-3.3-70b-versatile"
+
+
+def ask_llm(prompt, system=None, temperature=0.3):
+    """Send a prompt to Groq. Raises if daily call cap exceeded."""
+    global call_count
+    call_count += 1
+    if call_count > MAX_CALLS:
+        raise RuntimeError(f"Lab limit reached ({MAX_CALLS} calls). Stop and save your work.")
+    messages = []
+    if system:
+        messages.append({"role": "system", "content": system})
+    messages.append({"role": "user", "content": prompt})
+    response = client.chat.completions.create(
+        model=MODEL,
+        messages=messages,
+        temperature=temperature,
+    )
+    return response.choices[0].message.content
+
+print("Setup complete. Model:", MODEL)
+
+v=["Summarize about romeo and juliet in one paragraph", "Summarize about romeo and juliet in exactly 2 sentences. Response should be in simple english. ", "Consider your self as a romantic writer give info about Romeo and juliet in 2 sentences. Response should be in simple english. Describe the forbidden love of romeo and juliet."]
+for i in v:
+    print("Prompt: "+i)
+    print("Response: ")
+    print(ask_llm(i)+"\n")
